@@ -5,17 +5,20 @@ import logging
 import sys
 
 from utils import init_logger, pause
-from libvmi import Libvmi, VMIOS
+from libvmi import Libvmi, VMIOS, VMIInitData, VMIConfig
 
 
 def main(args):
-    if len(args) != 2:
-        print('./process-list.py <vm_name>')
+    if len(args) != 4:
+        print('./process-list.py <vm_name> <socket> <json_path>')
         return 1
 
     vm_name = args[1]
+    kvm_socket = {VMIInitData.KVMI_SOCKET: args[2]}
+    config_mode = VMIConfig.JSON_PATH
+    json_path = args[3]
 
-    with Libvmi(vm_name) as vmi:
+    with Libvmi(vm_name, init_data=kvm_socket, config_mode=config_mode, config=json_path) as vmi:
         # get ostype
         os = vmi.get_ostype()
         # init offsets values

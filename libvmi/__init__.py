@@ -4,4 +4,4 @@ from .libvmi import INIT_DOMAINNAME, INIT_DOMAINID, INIT_EVENTS
 from .libvmi import (Libvmi, LibvmiError, VMIConfig, VMIMode, AccessContext,
                      TranslateMechanism, X86Reg, Registers)
 from .libvmi import VMIStatus, LibvmiInitError, PageMode
-from .libvmi import VMIArch, VMIOS, VMIWinVer
+from .libvmi import VMIArch, VMIOS, VMIWinVer, VMIInitData

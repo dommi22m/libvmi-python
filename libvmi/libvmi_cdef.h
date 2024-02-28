@@ -76,6 +76,8 @@ typedef enum vmi_config {
     VMI_CONFIG_STRING,            /**< config string provided */
 
     VMI_CONFIG_GHASHTABLE,        /**< config GHashTable provided */
+
+    VMI_CONFIG_JSON_PATH,
 } vmi_config_t;
 
 // vmi_mode
@@ -86,6 +88,7 @@ typedef enum vmi_mode {
     VMI_KVM, /**< libvmi is monitoring a KVM VM */
 
     VMI_FILE, /**< libvmi is viewing a file on disk */
+
 } vmi_mode_t;
 
 // vmi_init_error_t
@@ -201,6 +204,24 @@ typedef enum page_size {
     VMI_PS_1GB      = 0x4000000,  /**< 1GB */
 
 } page_size_t;
+
+typedef enum {
+    VMI_INIT_DATA_XEN_EVTCHN, /**< Xen file descriptor */
+
+    VMI_INIT_DATA_MEMMAP,    /**< memory_map_t pointer */
+
+    VMI_INIT_DATA_KVMI_SOCKET     /**< kvmi socket path */
+} vmi_init_data_type_t;
+
+typedef struct {
+    uint64_t type; /**< type (VMI_INIT_DATA_*) */
+    void *data;    /**< the data being passed in */
+} vmi_init_data_entry_t;
+
+typedef struct {
+    uint64_t count;  /**< number of entries */
+    vmi_init_data_entry_t entry[]; /**< entry for each data being passed in */
+} vmi_init_data_t;
 
 typedef uint64_t reg_t;
 

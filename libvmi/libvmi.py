@@ -105,6 +105,7 @@ class VMIConfig(Enum):
     GLOBAL_FILE_ENTRY = lib.VMI_CONFIG_GLOBAL_FILE_ENTRY
     STRING = lib.VMI_CONFIG_STRING
     DICT = lib.VMI_CONFIG_GHASHTABLE
+    JSON_PATH = lib.VMI_CONFIG_JSON_PATH
 
 
 class VMIStatus(Enum):
@@ -167,6 +168,11 @@ class TranslateMechanism(Enum):
     PROCESS_PID = lib.VMI_TM_PROCESS_PID
     KERNEL_SYMBOL = lib.VMI_TM_KERNEL_SYMBOL
 
+class VMIInitData(Enum):
+    XEN_EVTCHN = lib.VMI_INIT_DATA_XEN_EVTCHN
+    MEMMAP = lib.VMI_INIT_DATA_MEMMAP
+    KVMI_SOCKET = lib.VMI_INIT_DATA_KVMI_SOCKET
+
 
 class AccessContext(object):
 
@@ -226,6 +232,22 @@ class Libvmi(object):
         # avoid GC to free ghashtable inserted values
         ghash_ref = dict()
         ghash = None
+        # keep references on ffi buffers, avoid issues with GC
+        ffi_refs = {
+            'init_data': []
+        }
+        init_data_ffi = ffi.NULL
+        if init_data:
+            init_data_ffi = ffi.new("vmi_init_data_t *", {"entry": len(init_data)})
+            init_data_ffi.count = len(init_data)
+            for i, (e_type, e_value) in enumerate(init_data.items()):
+                init_data_ffi.entry[i].type = e_type.value
+                if not isinstance(e_value, str):
+                    raise RuntimeError("Passing anything else than a string as init_data value is not implemented")
+                ref = e_value.encode()
+                init_data_ffi.entry[i].data = ffi.from_buffer(ref)
+                # keep a ref !
+                ffi_refs['init_data'].append(ref)
         if partial:
             # vmi_init
             if not mode:
@@ -243,7 +265,7 @@ class Libvmi(object):
                                   mode.value,
                                   domain,
                                   init_flags,
-                                  init_data,
+                                  init_data_ffi,
                                   init_error)
         else:
             # vmi_init_complete
@@ -252,7 +274,7 @@ class Libvmi(object):
             if init_flags & INIT_DOMAINNAME or init_flags & INIT_DOMAINID:
                 domain = domain.encode()
             # same for VMI_CONFIG_STRING
-            if config_mode == VMIConfig.STRING:
+            if config_mode in [VMIConfig.STRING, VMIConfig.JSON_PATH]:
                 config = config.encode()
             elif config_mode == VMIConfig.DICT:
                 # need to convert config to a GHashTable
@@ -280,7 +302,7 @@ class Libvmi(object):
             status = lib.vmi_init_complete(self.opaque_vmi,
                                            domain,
                                            init_flags,
-                                           init_data,
+                                           init_data_ffi,
                                            config_mode.value,
                                            config,
                                            init_error)
